@@ -1,0 +1,52 @@
+/* styles.css */
+
+body,
+html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: black;
+  color: white;
+  font-family: monospace;
+}
+
+#terminal {
+  box-sizing: border-box;
+  padding: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+#output {
+  white-space: pre-wrap;
+}
+
+#input-line {
+  display: flex;
+}
+
+#prompt {
+  flex-shrink: 0;
+}
+
+#input {
+  flex-grow: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  outline: none;
+  font-family: monospace;
+}
+
+/* Style for clickable links */
+a.link {
+  color: #00aaff;
+  /* Default link color */
+  text-decoration: none;
+}
+
+a.link:hover {
+  color: #ffaa00;
+  /* Color on hover */
+  text-decoration: underline;
+}
