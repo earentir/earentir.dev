@@ -31,7 +31,8 @@ const commands = {
     help: handleHelp,
     clear: handleClear,
     cd: handleCd,
-    su: handleSu
+    su: handleSu,
+    grep: handleGrep
 };
 
 // Initialize the terminal
@@ -115,7 +116,6 @@ function processCommand(input, output) {
     }
 }
 
-// Robust input parser handling quotes and escaped spaces
 function parseInput(input) {
     const args = [];
     let currentArg = '';
@@ -161,10 +161,6 @@ function parseInput(input) {
 }
 
 // Command Handlers
-
-// script.js
-
-// script.js
 
 function handleLs(args) {
     const flags = parseFlags(args);
@@ -716,4 +712,94 @@ function findParentDirectory(currentDir, targetDir) {
 function calculateFileSize(contentArray) {
     // Calculate the total number of characters in the content array, including newlines
     return contentArray.reduce((total, line) => total + line.length + 1, 0); // +1 for each newline
+}
+
+function handleGrep(args) {
+    if (args.length < 2) {
+        return 'Usage: grep [-r] [-i] <pattern> <file|directory>';
+    }
+
+    let recursive = false;
+    let caseInsensitive = false;
+    let pattern;
+    let targetPath;
+    let startIndex = 0;
+
+    // Check for flags
+    while (args[startIndex].startsWith('-')) {
+        const flags = args[startIndex].substring(1).split('');
+        flags.forEach(flag => {
+            if (flag === 'r') recursive = true;
+            if (flag === 'i') caseInsensitive = true;
+        });
+        startIndex++;
+        if (startIndex >= args.length) break;
+    }
+
+    if (args.length < startIndex + 2) {
+        return 'Usage: grep [-r] [-i] <pattern> <file|directory>';
+    }
+
+    pattern = args[startIndex];
+    targetPath = args.slice(startIndex + 1).join(' ');
+
+    // Resolve the target path without changing the current path
+    const targetEntry = resolvePathWithoutChanging(targetPath);
+
+    if (!targetEntry) {
+        return `grep: ${targetPath}: No such file or directory`;
+    }
+
+    if (targetEntry.type === 'file') {
+        return searchInFile(targetEntry, pattern, caseInsensitive);
+    } else if (targetEntry.type === 'directory') {
+        if (!recursive) {
+            return `grep: ${targetPath}: Is a directory. Use -r to search directories recursively.`;
+        }
+        return searchInDirectory(targetEntry, pattern, targetPath, caseInsensitive);
+    } else {
+        return `grep: ${targetPath}: Unsupported file type`;
+    }
+}
+
+// Update the helper functions to handle case-insensitive search
+function searchInFile(file, pattern, caseInsensitive = false) {
+    const matches = [];
+    const regex = caseInsensitive ? new RegExp(pattern, 'i') : new RegExp(pattern);
+
+    file.content.forEach((line, index) => {
+        if (regex.test(line)) {
+            matches.push(`${file.name}:${index + 1}:${line}`);
+        }
+    });
+
+    if (matches.length === 0) {
+        return '';
+    }
+
+    return matches.join('\n');
+}
+
+function searchInDirectory(directory, pattern, basePath, caseInsensitive = false) {
+    const matches = [];
+    const regex = caseInsensitive ? new RegExp(pattern, 'i') : new RegExp(pattern);
+
+    directory.children.forEach(entry => {
+        const entryPath = `${basePath}/${entry.name}`;
+        if (entry.type === 'file') {
+            entry.content.forEach((line, index) => {
+                if (regex.test(line)) {
+                    matches.push(`${entryPath}:${index + 1}:${line}`);
+                }
+            });
+        } else if (entry.type === 'directory') {
+            // Recursively search in subdirectories
+            const subMatches = searchInDirectory(entry, pattern, entryPath, caseInsensitive);
+            if (subMatches) {
+                matches.push(subMatches);
+            }
+        }
+    });
+
+    return matches.join('\n');
 }
