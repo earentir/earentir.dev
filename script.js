@@ -83,6 +83,14 @@ window.onload = () => {
             handleTabCompletion(input);
         }
     });
+
+    // **Add this event listener to focus input when clicking on the terminal**
+    terminal.addEventListener('click', function (event) {
+        // Check if the clicked element is not a link (<a>) to allow link interactions
+        if (event.target !== input && event.target.tagName !== 'A') {
+            input.focus();
+        }
+    });
 };
 
 // Process user commands
@@ -154,6 +162,10 @@ function parseInput(input) {
 
 // Command Handlers
 
+// script.js
+
+// script.js
+
 function handleLs(args) {
     const flags = parseFlags(args);
     const directoryArgs = args.filter(arg => !arg.startsWith('-'));
@@ -192,27 +204,58 @@ function handleLs(args) {
                     return a.type === 'directory' ? -1 : 1;
                 });
 
+                // Additional sorting for blog directory
+                const currentListingPath = getFormattedPath();
+                if (resolvedDir.name === 'blog' || currentListingPath.endsWith('/blog')) {
+                    entries.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        return dateB - dateA; // Newest first
+                    });
+                }
+
                 if (flags.l || flags.s) {
                     const lines = [];
                     if (flags.l) {
-                        const total = calculateTotalSize(entries);
+                        let total = 0;
+                        entries.forEach(entry => {
+                            if (entry.type === 'file') {
+                                total += calculateFileSize(entry.content);
+                            } else if (entry.type === 'directory') {
+                                total += 4096; // **Fixed size for directories**
+                            }
+                        });
                         lines.push(`total ${total}`);
                         entries.forEach(entry => {
                             const permissions = entry.permissions;
                             const linkCount = 1; // Simplified
                             const owner = entry.owner;
                             const group = entry.group;
-                            const size = entry.size;
+                            // **Set size to 4096 for directories, calculate for files**
+                            const size = entry.type === 'file' ? calculateFileSize(entry.content) : 4096;
                             const date = entry.date;
                             const name = entry.name + (entry.type === 'directory' ? '/' : '');
-                            lines.push(`${permissions} ${linkCount} ${owner} ${group} ${size} ${date} ${name}`);
+                            // **Format size to six spaces**
+                            const formattedSize = size.toString().padStart(6, ' ');
+                            lines.push(`${permissions} ${linkCount} ${owner} ${group} ${formattedSize} ${date} ${name}`);
                         });
                         output.push(...lines);
                     } else if (flags.s) {
-                        const total = calculateTotalSize(entries);
+                        let total = 0;
+                        entries.forEach(entry => {
+                            if (entry.type === 'file') {
+                                total += calculateFileSize(entry.content);
+                            } else if (entry.type === 'directory') {
+                                total += 4096; // **Fixed size for directories**
+                            }
+                        });
                         lines.push(`total ${total}`);
                         entries.forEach(entry => {
-                            lines.push(`${entry.size} ${entry.name}`);
+                            // **Set size to 4096 for directories, calculate for files**
+                            const size = entry.type === 'file' ? calculateFileSize(entry.content) : 4096;
+                            // **Format size to six spaces**
+                            const formattedSize = size.toString().padStart(6, ' ');
+                            lines.push(`${formattedSize} ${entry.name}`);
                         });
                         output.push(...lines);
                     }
@@ -245,27 +288,57 @@ function handleLs(args) {
             return a.type === 'directory' ? -1 : 1;
         });
 
+        // Additional sorting for blog directory
+        if (getCurrentDirectory().name === 'blog' || getFormattedPath().endsWith('/blog')) {
+            entries.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateB - dateA; // Newest first
+            });
+        }
+
         if (flags.l || flags.s) {
             const lines = [];
             if (flags.l) {
-                const total = calculateTotalSize(entries);
+                let total = 0;
+                entries.forEach(entry => {
+                    if (entry.type === 'file') {
+                        total += calculateFileSize(entry.content);
+                    } else if (entry.type === 'directory') {
+                        total += 4096; // **Fixed size for directories**
+                    }
+                });
                 lines.push(`total ${total}`);
                 entries.forEach(entry => {
                     const permissions = entry.permissions;
                     const linkCount = 1; // Simplified
                     const owner = entry.owner;
                     const group = entry.group;
-                    const size = entry.size;
+                    // **Set size to 4096 for directories, calculate for files**
+                    const size = entry.type === 'file' ? calculateFileSize(entry.content) : 4096;
                     const date = entry.date;
                     const name = entry.name + (entry.type === 'directory' ? '/' : '');
-                    lines.push(`${permissions} ${linkCount} ${owner} ${group} ${size} ${date} ${name}`);
+                    // **Format size to six spaces**
+                    const formattedSize = size.toString().padStart(6, ' ');
+                    lines.push(`${permissions} ${linkCount} ${owner} ${group} ${formattedSize} ${date} ${name}`);
                 });
                 return lines;
             } else if (flags.s) {
-                const total = calculateTotalSize(entries);
+                let total = 0;
+                entries.forEach(entry => {
+                    if (entry.type === 'file') {
+                        total += calculateFileSize(entry.content);
+                    } else if (entry.type === 'directory') {
+                        total += 4096; // **Fixed size for directories**
+                    }
+                });
                 lines.push(`total ${total}`);
                 entries.forEach(entry => {
-                    lines.push(`${entry.size} ${entry.name}`);
+                    // **Set size to 4096 for directories, calculate for files**
+                    const size = entry.type === 'file' ? calculateFileSize(entry.content) : 4096;
+                    // **Format size to six spaces**
+                    const formattedSize = size.toString().padStart(6, ' ');
+                    lines.push(`${formattedSize} ${entry.name}`);
                 });
                 return lines;
             }
@@ -275,6 +348,8 @@ function handleLs(args) {
         }
     }
 }
+
+
 
 function handleCat(args) {
     if (args.length === 0) {
@@ -298,9 +373,34 @@ function handleCat(args) {
         return `cat: ${args[0]}: Is a directory`;
     }
 
-    // Process file content to detect links and render them as clickable
-    const processedContent = fileEntry.content.map(line => parseLineForLinks(line)).join('\n');
-    return processedContent;
+    // Check if the file is a Markdown file
+    const isMarkdown = fileEntry.name.endsWith('.md');
+
+    if (isMarkdown) {
+        // Convert Markdown to HTML using Marked.js
+        const markdownContent = fileEntry.content.join('\n');
+        const htmlContent = marked.parse(markdownContent);
+
+        // Create a div to hold the rendered Markdown
+        const renderedDiv = document.createElement('div');
+        renderedDiv.classList.add('markdown-output');
+        renderedDiv.innerHTML = htmlContent;
+
+        // Apply syntax highlighting if Highlight.js is included
+        if (window.hljs) {
+            renderedDiv.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
+
+        // Append the rendered Markdown to the output
+        const output = document.getElementById('output');
+        output.appendChild(renderedDiv);
+    } else {
+        // For non-Markdown files, display as plain text with link parsing
+        const processedContent = fileEntry.content.map(line => parseLineForLinks(line)).join('\n');
+        appendOutput(processedContent, document.getElementById('output'));
+    }
 }
 
 function handleHelp() {
@@ -312,7 +412,7 @@ function handleHelp() {
     -s : Show sizes
     -la, -al, -ls, -sl, -as, -sa : Combination of flags
 - cat <file_path>: View file contents
-  - Supports file paths, e.g., cat "folder name/file.txt" or cat folder\ name/file.txt
+  - Supports file paths, e.g., cat "folder name/file.txt" or cat folder\\ name/file.txt
 - cd <directory>: Change directory
   - cd .. : Go up one directory
   - cd ~ : Go to home directory
@@ -611,4 +711,9 @@ function findParentDirectory(currentDir, targetDir) {
         }
     }
     return null;
+}
+
+function calculateFileSize(contentArray) {
+    // Calculate the total number of characters in the content array, including newlines
+    return contentArray.reduce((total, line) => total + line.length + 1, 0); // +1 for each newline
 }

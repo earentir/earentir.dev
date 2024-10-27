@@ -50,3 +50,42 @@ a.link:hover {
   /* Color on hover */
   text-decoration: underline;
 }
+
+.markdown-output {
+  white-space: pre-wrap;
+  font-family: monospace;
+  color: white;
+}
+
+.markdown-output h1,
+.markdown-output h2,
+.markdown-output h3,
+.markdown-output h4,
+.markdown-output h5,
+.markdown-output h6 {
+  color: #00aaff;
+  /* Header color */
+}
+
+.markdown-output a {
+  color: #00aaff;
+  text-decoration: none;
+}
+
+.markdown-output a:hover {
+  color: #ffaa00;
+  text-decoration: underline;
+}
+
+.markdown-output code {
+  background-color: #333;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.markdown-output pre {
+  background-color: #333;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+}

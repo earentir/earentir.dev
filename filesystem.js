@@ -6,7 +6,6 @@ const fileSystem = {
     permissions: 'drwxr-xr-x.',
     owner: 'earentir',
     group: 'earentir',
-    size: 0,
     children: [
         {
             name: 'projects',
@@ -15,7 +14,6 @@ const fileSystem = {
             permissions: 'drwxr-xr-x.',
             owner: 'earentir',
             group: 'earentir',
-            size: 72,
             children: [
                 {
                     name: 'go',
@@ -24,7 +22,6 @@ const fileSystem = {
                     permissions: 'drwxr-xr-x.',
                     owner: 'earentir',
                     group: 'earentir',
-                    size: 26,
                     children: [
                         //go project here
                     ]
@@ -134,7 +131,6 @@ const fileSystem = {
             permissions: '-rw-r--r--.',
             owner: 'earentir',
             group: 'earentir',
-            size: 477,
             content: [
                 'I am Earentir,',
                 'a software developer with a passion for coding and problem-solving.',
@@ -157,7 +153,6 @@ const fileSystem = {
             permissions: '-rw-r--r--.',
             owner: 'earentir',
             group: 'earentir',
-            size: 477,
             content: [
                 'This is a simple API used by me and friends for pulling various data,',
                 'you can find the documentation here: https://api.earentir.dev/doc/ and',
@@ -174,7 +169,6 @@ const fileSystem = {
             permissions: '-rw-r--r--.',
             owner: 'earentir',
             group: 'earentir',
-            size: 477,
             content: [
                 'This will give you the selected time in a form that discord can understand,',
                 'and update for all users. It takes into account the time zone of the user',
@@ -190,7 +184,6 @@ const fileSystem = {
             permissions: 'drwxr-xr-x.',
             owner: 'earentir',
             group: 'earentir',
-            size: 72,
             children: [
             ]
         },
@@ -201,7 +194,6 @@ const fileSystem = {
             permissions: 'drwxr-xr-x.',
             owner: 'earentir',
             group: 'earentir',
-            size: 26,
             children: [
                 {
                     name: 'key.asc',
@@ -210,7 +202,6 @@ const fileSystem = {
                     permissions: '-rw-r--r--',
                     owner: 'earentir',
                     group: 'earentir',
-                    size: 23845,
                     content: [
                         '-----BEGIN PGP PUBLIC KEY BLOCK-----',
                         '',

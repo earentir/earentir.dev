@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,6 +5,8 @@
     <meta charset="UTF-8">
     <title>Earentir's Terminal</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Highlight.js CSS (Optional) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
 </head>
 
 <body>
@@ -18,7 +19,12 @@
     </div>
 
     <script src="filesystem.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js"></script> <!-- Load script.js before blogposts.js -->
+    <script src="blogposts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Highlight.js JS (Optional) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
 </body>
 
 </html>
