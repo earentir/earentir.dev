@@ -3,7 +3,8 @@
 // Ensure filesystem.js is loaded before this script
 
 // Initialize the current directory path from localStorage or root
-let currentPath = JSON.parse(localStorage.getItem('terminal-currentPath')) || ['/'];
+// Initialize the current directory path from localStorage or home directory
+let currentPath = JSON.parse(localStorage.getItem('terminal-currentPath')) || ['/', 'home', username];
 
 // Utility function to get the current directory object
 function getCurrentDirectory() {
@@ -22,7 +23,8 @@ function getCurrentDirectory() {
 
 // Initialize username and hostname
 const hostname = 'hera';
-let username = localStorage.getItem('terminal-username') || 'user';
+let username = localStorage.getItem('terminal-username') || 'earentir';
+const homeDirPath = `/home/${username}/`;
 
 // Define available commands
 const commands = {
@@ -32,7 +34,8 @@ const commands = {
     clear: handleClear,
     cd: handleCd,
     su: handleSu,
-    grep: handleGrep
+    grep: handleGrep,
+    pwd: handlePwd
 };
 
 // Initialize the terminal
@@ -41,6 +44,12 @@ window.onload = () => {
     const input = document.getElementById('input');
     const output = document.getElementById('output');
     const prompt = document.getElementById('prompt');
+
+    // If currentPath is not set in localStorage, initialize it to home directory
+    if (!localStorage.getItem('terminal-currentPath')) {
+        currentPath = ['/', 'home', username];
+        localStorage.setItem('terminal-currentPath', JSON.stringify(currentPath));
+    }
 
     updatePrompt();
 
@@ -422,19 +431,17 @@ function handleClear() {
     output.innerHTML = '';
 }
 
+
 function handleCd(args) {
     if (args.length === 0) {
-        return 'cd: missing operand';
+        path = homeDirPath;
     }
 
     let path = args[0].trim();
 
-    // Handle special case for '~' to go to home (root) directory
+    // Handle special case for '~' to go to home directory
     if (path === '~') {
-        currentPath = ['/'];
-        localStorage.setItem('terminal-currentPath', JSON.stringify(currentPath));
-        updatePrompt();
-        return;
+        path = homeDirPath;
     }
 
     const resolvedDir = resolvePath(path);
@@ -443,11 +450,16 @@ function handleCd(args) {
         return `cd: ${path}: No such directory`;
     }
 
+    if (resolvedDir.type !== 'directory') {
+        return `cd: ${path}: Not a directory`;
+    }
+
     // Update the current path based on the resolved path
     currentPath = buildCurrentPath(resolvedDir);
     localStorage.setItem('terminal-currentPath', JSON.stringify(currentPath));
     updatePrompt();
 }
+
 
 function handleSu(args) {
     if (args.length < 2 || args[0] !== '-') {
@@ -494,9 +506,21 @@ function calculateTotalSize(entries) {
     return entries.reduce((acc, entry) => acc + entry.size, 0);
 }
 
-function getFormattedPath() {
+function handlePwd(args) {
     if (currentPath.length === 1) {
+        return '/';
+    }
+
+    return '/' + currentPath.slice(1).join('/') + '/';
+}
+
+function getFormattedPath() {
+    const homePath = ['/', 'home', username];
+    if (JSON.stringify(currentPath) === JSON.stringify(homePath)) {
         return '~';
+    }
+    if (currentPath.length === 1) {
+        return '/';
     }
     return '/' + currentPath.slice(1).join('/');
 }
@@ -587,36 +611,53 @@ function parseLineForLinks(line) {
 }
 
 // Resolve Directory Path (used by cd)
-function resolvePath(path) {
-    if (!path) return getCurrentDirectory();
+function resolvePath(inputPath) {
+    if (!inputPath) return getCurrentDirectory();
 
-    const parts = path.split('/').filter(part => part.length > 0);
-    let dir = path.startsWith('/') ? fileSystem : getCurrentDirectory();
-
-    for (const part of parts) {
-        if (part === '.') {
-            continue;
-        } else if (part === '..') {
-            if (currentPath.length > 1) {
-                currentPath.pop();
-                dir = getCurrentDirectory();
-            } else {
-                // Already at root
-                return null;
-            }
-        } else {
-            const found = dir.children.find(child => child.type === 'directory' && child.name === part);
-            if (found) {
-                dir = found;
-                currentPath.push(part);
-            } else {
-                return null; // Directory not found
-            }
-        }
+    // Handle absolute paths
+    if (inputPath.startsWith('/')) {
+        return traversePath(fileSystem, inputPath.split('/').filter(part => part));
     }
 
+    // Handle home directory shortcut
+    if (inputPath.startsWith('~')) {
+        const relativePath = inputPath.slice(1).replace(/^\/+/, '');
+        const fullPath = homeDirPath + relativePath;
+        return traversePath(fileSystem, fullPath.split('/').filter(part => part));
+    }
+
+    // Handle relative paths
+    return traversePath(getCurrentDirectory(), inputPath.split('/').filter(part => part));
+}
+
+// Helper function to traverse the filesystem based on path parts
+function traversePath(currentDir, pathParts) {
+    let dir = currentDir;
+    for (let part of pathParts) {
+        if (part === '..') {
+            if (dir.parent) {
+                dir = dir.parent;
+            }
+            continue;
+        }
+        const found = dir.children.find(child => child.name === part);
+        if (!found) {
+            return null;
+        }
+        dir = found;
+    }
     return dir;
 }
+
+// Ensure each directory has a reference to its parent
+function initializeFileSystem(fs, parent = null) {
+    fs.parent = parent;
+    if (fs.type === 'directory') {
+        fs.children.forEach(child => initializeFileSystem(child, fs));
+    }
+}
+
+initializeFileSystem(fileSystem);
 
 // Resolve Directory/File Path without changing currentPath (used by ls and cat)
 function resolvePathWithoutChanging(path) {
