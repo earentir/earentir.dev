@@ -23,7 +23,7 @@ const fileSystem = {
                     owner: 'earentir',
                     group: 'earentir',
                     content: [
-                        'Earentir Terminal v1.0.7',
+                        'Earentir Terminal v1.0.9',
                     ]
                 }
             ]

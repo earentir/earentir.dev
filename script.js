@@ -5,6 +5,11 @@
 // Initialize the current directory path from localStorage or home directory
 let currentPath = JSON.parse(localStorage.getItem('terminal-currentPath')) || ['/', 'home', username];
 
+// Variables to track Tab presses
+let lastTabTime = 0;
+let tabPressCount = 0;
+const TAB_PRESS_INTERVAL = 500; // Time in milliseconds to detect double Tab
+
 // Utility function to get the current directory object
 function getCurrentDirectory() {
     let dir = fileSystem;
@@ -71,27 +76,53 @@ window.onload = () => {
             }
             processCommand(userInput, output);
             input.value = '';
+            updateBlockCursor(); // Reset cursor position after command
             scrollToBottom(terminal);
         } else if (event.key === 'ArrowUp') {
             if (historyIndex > 0) {
                 historyIndex--;
                 input.value = commandHistory[historyIndex];
+                updateBlockCursor();
             }
             event.preventDefault();
         } else if (event.key === 'ArrowDown') {
             if (historyIndex < commandHistory.length - 1) {
                 historyIndex++;
                 input.value = commandHistory[historyIndex];
+                updateBlockCursor();
             } else {
                 historyIndex = commandHistory.length;
                 input.value = '';
+                updateBlockCursor();
             }
             event.preventDefault();
         } else if (event.key === 'Tab') {
             event.preventDefault();
-            handleTabCompletion(input);
+
+            const currentTime = new Date().getTime();
+
+            if (currentTime - lastTabTime < TAB_PRESS_INTERVAL) {
+                tabPressCount++;
+            } else {
+                tabPressCount = 1;
+            }
+
+            lastTabTime = currentTime;
+
+            if (tabPressCount === 2) {
+                // Double Tab pressed
+                handleTabCompletion(input, 'double');
+                tabPressCount = 0; // Reset the count
+            } else {
+                // Single Tab pressed
+                handleTabCompletion(input, 'single');
+            }
+        } else {
+            // Update cursor on any other key press
+            setTimeout(updateBlockCursor, 0);
         }
     });
+
 
     // **Add this event listener to focus input when clicking on the terminal**
     terminal.addEventListener('click', function (event) {
@@ -103,6 +134,11 @@ window.onload = () => {
 };
 
 function updateBlockCursor() {
+    const input = document.getElementById('input');
+    const blockCursor = document.getElementById('block-cursor');
+
+    if (!input || !blockCursor) return; // Prevent errors if elements are missing
+
     const text = input.value.substring(0, input.selectionStart);
     const font = window.getComputedStyle(input).font;
 
@@ -121,7 +157,6 @@ function updateBlockCursor() {
         blockCursor.style.left = `${textWidth}px`;
     });
 }
-
 
 // Process user commands
 function processCommand(input, output) {
@@ -500,8 +535,9 @@ function handleSu(args) {
 
 function appendOutput(text, output) {
     const line = document.createElement('div');
-    line.innerHTML = text; // Supports clickable links
+    line.innerHTML = text; // Supports clickable links and rendered Markdown
     output.appendChild(line);
+    scrollToBottom(output); // Ensure the latest output is visible
 }
 
 function scrollToBottom(element) {
@@ -552,7 +588,7 @@ function updatePrompt() {
 
 // Tab Completion Functionality
 
-function handleTabCompletion(inputElement) {
+function handleTabCompletion(inputElement, tabType) {
     const input = inputElement.value;
     const cursorPos = inputElement.selectionStart;
     const beforeCursor = input.substring(0, cursorPos);
@@ -565,6 +601,16 @@ function handleTabCompletion(inputElement) {
     const command = tokens[0];
     const partial = tokens[tokens.length - 1];
     const args = tokens.slice(1);
+
+    // Check if partial ends with '/'
+    const endsWithSlash = partial.endsWith('/');
+
+    if (endsWithSlash) {
+        // If the partial ends with '/', assume it's a directory path
+        const lsCommand = `ls ${partial}`;
+        processCommand(lsCommand, document.getElementById('output'));
+        return;
+    }
 
     let suggestions = [];
 
@@ -587,15 +633,30 @@ function handleTabCompletion(inputElement) {
         suggestions = getCommandSuggestions(partial);
     }
 
-    if (suggestions.length === 1) {
-        // Complete the command or argument
-        tokens[tokens.length - 1] = suggestions[0];
-        const newInput = tokens.join(' ');
-        inputElement.value = newInput + (suggestions[0].endsWith('/') ? '' : ' ');
-    } else if (suggestions.length > 1) {
-        // Display suggestions
-        const output = document.getElementById('output');
-        appendOutput(suggestions.join('  '), output);
+    if (tabType === 'double') {
+        if (partial === '') {
+            // Show all commands and current directory's children
+            const commandSuggestions = Object.keys(commands);
+            const fileSuggestions = getSuggestions('', 'file_directory');
+            suggestions = commandSuggestions.concat(fileSuggestions);
+        }
+
+        if (suggestions.length > 0) {
+            const output = document.getElementById('output');
+            appendOutput(suggestions.join('  '), output);
+        }
+    } else if (tabType === 'single') {
+        if (suggestions.length === 1) {
+            // Complete the command or argument
+            tokens[tokens.length - 1] = suggestions[0];
+            const newInput = tokens.join(' ');
+            inputElement.value = newInput + (suggestions[0].endsWith('/') ? '' : ' ');
+            updateBlockCursor(); // Update cursor after autocomplete
+        } else if (suggestions.length > 1) {
+            // Show suggestions
+            const output = document.getElementById('output');
+            appendOutput(suggestions.join('  '), output);
+        }
     }
 }
 
@@ -605,17 +666,36 @@ function getCommandSuggestions(partial) {
 }
 
 function getSuggestions(partial, type) {
-    const currentDir = getCurrentDirectory();
-    let entries = currentDir.children;
+    // Split the partial into directory path and the name to autocomplete
+    const lastSlashIndex = partial.lastIndexOf('/');
+    let dirPath = '';
+    let namePart = partial;
 
-    if (type === 'directory') {
-        entries = entries.filter(child => child.type === 'directory' && child.name.startsWith(partial));
-    } else if (type === 'file_directory') {
-        entries = entries.filter(child => (child.type === 'file' || child.type === 'directory') && child.name.startsWith(partial));
+    if (lastSlashIndex !== -1) {
+        dirPath = partial.substring(0, lastSlashIndex + 1); // Include '/'
+        namePart = partial.substring(lastSlashIndex + 1);
     }
 
-    return entries.map(entry => escapeSpaces(entry.name) + (entry.type === 'directory' ? '/' : ''));
+    // Resolve the directory path
+    const dir = resolvePathWithoutChanging(dirPath);
+
+    if (!dir || dir.type !== 'directory') {
+        return [];
+    }
+
+    // Filter the children based on the type and namePart
+    let entries = dir.children;
+
+    if (type === 'directory') {
+        entries = entries.filter(child => child.type === 'directory' && child.name.startsWith(namePart));
+    } else if (type === 'file_directory') {
+        entries = entries.filter(child => (child.type === 'file' || child.type === 'directory') && child.name.startsWith(namePart));
+    }
+
+    return entries.map(entry => escapeSpaces(dirPath + entry.name) + (entry.type === 'directory' ? '/' : ''));
 }
+
+
 
 function escapeSpaces(name) {
     return name.replace(/ /g, '\\ ');
@@ -725,6 +805,7 @@ function resolvePathWithoutChanging(path) {
 
     return dir;
 }
+
 
 // Helper function to get directory by path array
 function getDirectoryByPath(pathArray) {

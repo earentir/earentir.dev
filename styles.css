@@ -27,6 +27,11 @@ html {
 
 #prompt {
   flex-shrink: 0;
+  position: relative; /* Added for block cursor positioning */
+}
+
+.input-container {
+  position: relative; /* Ensures block cursor is positioned correctly */
 }
 
 #input {
@@ -36,6 +41,26 @@ html {
   color: white;
   outline: none;
   font-family: monospace;
+  caret-color: transparent; /* Hide the native cursor */
+}
+
+/* Style for the block cursor */
+#block-cursor {
+    position: absolute;
+    width: 10px; /* Adjust width as needed */
+    height: 20px; /* Adjust height to match the input text height */
+    background-color: white; /* Cursor color */
+    animation: blink 1s step-start infinite;
+    top: 0;
+    left: 0;
+    z-index: 2; /* Ensure it appears above the input text */
+}
+
+/* Blinking animation for the cursor */
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
 }
 
 /* Style for clickable links */
