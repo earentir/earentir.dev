@@ -12,10 +12,14 @@
 <body>
     <div id="terminal">
         <div id="output"></div>
-        <div id="input-line">
-            <span id="prompt">$ </span>
-            <input type="text" id="input" autofocus autocomplete="off" />
-        </div>
+<div id="input-line">
+    <span id="prompt">$ </span>
+    <div class="input-container">
+        <input type="text" id="input" autofocus autocomplete="off" />
+        <div id="block-cursor"></div>
+    </div>
+</div>
+
     </div>
 
     <script src="filesystem.js"></script>

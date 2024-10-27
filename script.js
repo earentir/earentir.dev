@@ -2,7 +2,6 @@
 
 // Ensure filesystem.js is loaded before this script
 
-// Initialize the current directory path from localStorage or root
 // Initialize the current directory path from localStorage or home directory
 let currentPath = JSON.parse(localStorage.getItem('terminal-currentPath')) || ['/', 'home', username];
 
@@ -102,6 +101,27 @@ window.onload = () => {
         }
     });
 };
+
+function updateBlockCursor() {
+    const text = input.value.substring(0, input.selectionStart);
+    const font = window.getComputedStyle(input).font;
+
+    // Create a temporary span to calculate text width
+    const tempSpan = document.createElement('span');
+    tempSpan.style.visibility = 'hidden';
+    tempSpan.style.whiteSpace = 'pre';
+    tempSpan.style.font = font;
+    tempSpan.textContent = text || ' '; // Prevent empty span
+    document.body.appendChild(tempSpan);
+    const textWidth = tempSpan.offsetWidth;
+    document.body.removeChild(tempSpan);
+
+    // Update the block cursor position with a slight delay for smoother animation
+    requestAnimationFrame(() => {
+        blockCursor.style.left = `${textWidth}px`;
+    });
+}
+
 
 // Process user commands
 function processCommand(input, output) {

@@ -40,7 +40,23 @@ const blogPosts = [
 
 // Add blog posts to the blog directory with correct size calculations
 (function addBlogPosts() {
-    const blogDir = fileSystem.children.find(child => child.name === 'blog' && child.type === 'directory');
+    // Traverse to the 'home' directory
+    const homeDir = fileSystem.children.find(child => child.name === 'home' && child.type === 'directory');
+    if (!homeDir) {
+        console.error('Home directory not found in the filesystem.');
+        return;
+    }
+
+    // Traverse to the user directory (e.g., 'earentir')
+    const userDir = homeDir.children.find(child => child.name === username && child.type === 'directory');
+    if (!userDir) {
+        console.error(`User directory '${username}' not found in the filesystem.`);
+        return;
+    }
+
+    // Traverse to the 'blog' directory
+    const blogDir = userDir.children.find(child => child.name === 'blog' && child.type === 'directory');
+
     if (blogDir) {
         const postsWithCorrectSize = blogPosts.map(post => ({
             ...post,
