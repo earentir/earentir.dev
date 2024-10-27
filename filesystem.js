@@ -157,6 +157,37 @@ const fileSystem = {
                                     '',
                                     'echo "Conversion complete! Check the output file: $output_file"'
                                 ]
+                            },
+                            {
+                                name: 'api.txt',
+                                type: 'file',
+                                date: '2024-10-26 23:23',
+                                permissions: '-rw-r--r--.',
+                                owner: 'earentir',
+                                group: 'earentir',
+                                content: [
+                                    'This is a simple API used by me and friends for pulling various data,',
+                                    'you can find the documentation here: https://api.earentir.dev/doc/ and',
+                                    'the api end point here: https://api.earentir.dev/',
+                                    '',
+                                    'Please do not abuse this, I dont want to have to rate limit it.',
+                                    ''
+                                ]
+                            },
+                            {
+                                name: 'Discord Magic Time.txt',
+                                type: 'file',
+                                date: '2024-10-26 23:23',
+                                permissions: '-rw-r--r--.',
+                                owner: 'earentir',
+                                group: 'earentir',
+                                content: [
+                                    'This will give you the selected time in a form that discord can understand,',
+                                    'and update for all users. It takes into account the time zone of the user',
+                                    '',
+                                    'You can access it here: https://earentir.dev/dmt/',
+                                    ''
+                                ]
                             }
 
                         ]
@@ -181,37 +212,6 @@ const fileSystem = {
                             '',
                             'You can find me on',
                             '- Github https://github.com/earentir'
-                        ]
-                    },
-                    {
-                        name: 'api.txt',
-                        type: 'file',
-                        date: '2024-10-26 23:23',
-                        permissions: '-rw-r--r--.',
-                        owner: 'earentir',
-                        group: 'earentir',
-                        content: [
-                            'This is a simple API used by me and friends for pulling various data,',
-                            'you can find the documentation here: https://api.earentir.dev/doc/ and',
-                            'the api end point here: https://api.earentir.dev/',
-                            '',
-                            'Please do not abuse this, I dont want to have to rate limit it.',
-                            ''
-                        ]
-                    },
-                    {
-                        name: 'Discord Magic Time.txt',
-                        type: 'file',
-                        date: '2024-10-26 23:23',
-                        permissions: '-rw-r--r--.',
-                        owner: 'earentir',
-                        group: 'earentir',
-                        content: [
-                            'This will give you the selected time in a form that discord can understand,',
-                            'and update for all users. It takes into account the time zone of the user',
-                            '',
-                            'You can access it here: https://earentir.dev/dmt/',
-                            ''
                         ]
                     },
                     {
