@@ -5,6 +5,19 @@
 // Define blog posts
 const blogPosts = [
     {
+        name: 'washington post sub cancelation.md',
+        type: 'file',
+        date: '2024-10-29 02:32',
+        permissions: '-rw-r--r--.',
+        owner: 'earentir',
+        group: 'earentir',
+        content: [
+            '# Washington Post Subscription Cancelation',
+            'I just canceled by subscription to the Washington Post. It has been a good source of news for me over the years, but it has run its course, bezos decided to impose restrictions on the papers editors. He decided to support the fascist orange pig instead and did not allow their editorial about supporting Harris.',
+            'Choosing to support his wallet for the tax cuts he will receive over keeping the paper free to report the news and its opinions, is a disgrace. Thus, I choose to vote with my wallet and cancel my subscription.',
+        ]
+    },
+    {
         name: 'native go cpuid package.md',
         type: 'file',
         date: '2024-10-29 02:32',
