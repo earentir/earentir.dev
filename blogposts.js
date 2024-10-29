@@ -7,7 +7,7 @@ const blogPosts = [
     {
         name: 'washington post sub cancelation.md',
         type: 'file',
-        date: '2024-10-29 02:32',
+        date: '2024-10-29 03:58',
         permissions: '-rw-r--r--.',
         owner: 'earentir',
         group: 'earentir',
