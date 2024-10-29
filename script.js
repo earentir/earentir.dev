@@ -76,7 +76,7 @@ window.onload = () => {
             }
             processCommand(userInput, output);
             input.value = '';
-            updateBlockCursor(); // Reset cursor position after command
+            updateBlockCursor();
             scrollToBottom(terminal);
         } else if (event.key === 'ArrowUp') {
             if (historyIndex > 0) {
@@ -118,7 +118,6 @@ window.onload = () => {
                 handleTabCompletion(input, 'single');
             }
         } else {
-            // Update cursor on any other key press
             setTimeout(updateBlockCursor, 0);
         }
     });
@@ -571,13 +570,30 @@ function handlePwd(args) {
 }
 
 function getFormattedPath() {
-    const homePath = ['/', 'home', username];
-    if (JSON.stringify(currentPath) === JSON.stringify(homePath)) {
-        return '~';
-    }
+    // If we're at root
     if (currentPath.length === 1) {
         return '/';
     }
+
+    // Get the exact user's home directory path
+    const homePrefix = ['/', 'home', username];
+
+    // Check if current path exactly matches or starts with user's home directory
+    const isInUserHome = currentPath.length >= 3 &&
+        currentPath[1] === 'home' &&
+        currentPath[2] === username;
+
+    if (isInUserHome) {
+        if (currentPath.length === 3) {
+            // Exactly at user's home directory
+            return '~';
+        } else {
+            // In a subdirectory of user's home
+            return '~/' + currentPath.slice(3).join('/');
+        }
+    }
+
+    // Not in user's home directory, return full path
     return '/' + currentPath.slice(1).join('/');
 }
 
@@ -587,7 +603,6 @@ function updatePrompt() {
 }
 
 // Tab Completion Functionality
-
 function handleTabCompletion(inputElement, tabType) {
     const input = inputElement.value;
     const cursorPos = inputElement.selectionStart;
@@ -596,106 +611,145 @@ function handleTabCompletion(inputElement, tabType) {
 
     // Split the input into tokens
     const tokens = beforeCursor.split(' ').filter(arg => arg);
-    if (tokens.length === 0) return;
-
-    const command = tokens[0];
-    const partial = tokens[tokens.length - 1];
-    const args = tokens.slice(1);
-
-    // Check if partial ends with '/'
-    const endsWithSlash = partial.endsWith('/');
-
-    if (endsWithSlash) {
-        // If the partial ends with '/', assume it's a directory path
-        const lsCommand = `ls ${partial}`;
-        processCommand(lsCommand, document.getElementById('output'));
-        return;
-    }
 
     let suggestions = [];
 
-    if (commands[command]) {
-        if (command === 'cd') {
-            // Suggest directories only
-            suggestions = getSuggestions(partial, 'directory');
-        } else if (command === 'cat') {
-            // Suggest files and directories
-            suggestions = getSuggestions(partial, 'file_directory');
-        } else if (command === 'ls') {
-            // Suggest files and directories
-            suggestions = getSuggestions(partial, 'file_directory');
-        } else {
-            // Suggest commands
-            suggestions = getCommandSuggestions(partial);
+    if (tokens.length === 0) {
+        if (tabType === 'double') {
+            // Show all available commands
+            suggestions = Object.keys(commands);
         }
     } else {
-        // Suggest commands
-        suggestions = getCommandSuggestions(partial);
+        const command = tokens[0];
+        const partial = tokens[tokens.length - 1];
+        const isFirstToken = tokens.length === 1;
+
+        if (isFirstToken) {
+            // We're completing a command name
+            suggestions = getCommandSuggestions(partial);
+        } else {
+            // We're completing arguments for a command
+            switch (command) {
+                case 'cd':
+                    suggestions = getSuggestions(partial, 'directory');
+                    break;
+                case 'cat':
+                    suggestions = getSuggestions(partial, 'file');
+                    break;
+                default:
+                    suggestions = getSuggestions(partial, 'file_directory');
+                    break;
+            }
+        }
     }
 
-    if (tabType === 'double') {
-        if (partial === '') {
-            // Show all commands and current directory's children
-            const commandSuggestions = Object.keys(commands);
-            const fileSuggestions = getSuggestions('', 'file_directory');
-            suggestions = commandSuggestions.concat(fileSuggestions);
-        }
+    // Handle double tab - just show suggestions
+    if (tabType === 'double' && suggestions.length > 0) {
+        const output = document.getElementById('output');
+        const currentPrompt = `${username}@${hostname}:${getFormattedPath()}$ ${input}`;
 
-        if (suggestions.length > 0) {
-            const output = document.getElementById('output');
-            appendOutput(suggestions.join('  '), output);
-        }
-    } else if (tabType === 'single') {
+        // Show current input, suggestions, and a new prompt
+        appendOutput(currentPrompt, output);
+        appendOutput(suggestions.join('  '), output);
+        appendOutput('', output); // Empty line for spacing
+
+        // Do NOT modify the input field's contents
+        return;
+    }
+
+    // Handle single tab - attempt completion
+    if (tabType === 'single' && suggestions.length > 0) {
         if (suggestions.length === 1) {
-            // Complete the command or argument
-            tokens[tokens.length - 1] = suggestions[0];
-            const newInput = tokens.join(' ');
-            inputElement.value = newInput + (suggestions[0].endsWith('/') ? '' : ' ');
-            updateBlockCursor(); // Update cursor after autocomplete
-        } else if (suggestions.length > 1) {
-            // Show suggestions
-            const output = document.getElementById('output');
-            appendOutput(suggestions.join('  '), output);
+            // Single match - complete it
+            const partial = tokens[tokens.length - 1];
+            const partialStart = beforeCursor.length - partial.length;
+            const completion = suggestions[0];
+
+            const newInput = beforeCursor.slice(0, partialStart) +
+                completion +
+                (completion.endsWith('/') ? '' : ' ') +
+                afterCursor;
+
+            const newCursorPos = partialStart +
+                completion.length +
+                (completion.endsWith('/') ? 0 : 1);
+
+            inputElement.value = newInput;
+            inputElement.setSelectionRange(newCursorPos, newCursorPos);
+        } else {
+            // Multiple matches - complete common prefix
+            const commonPrefix = findCommonPrefix(suggestions);
+            const partial = tokens[tokens.length - 1];
+
+            if (commonPrefix.length > partial.length) {
+                const partialStart = beforeCursor.length - partial.length;
+                const newInput = beforeCursor.slice(0, partialStart) + commonPrefix + afterCursor;
+                const newCursorPos = partialStart + commonPrefix.length;
+
+                inputElement.value = newInput;
+                inputElement.setSelectionRange(newCursorPos, newCursorPos);
+            }
         }
     }
+
+    updateBlockCursor();
+}
+
+function findCommonPrefix(strings) {
+    if (strings.length === 0) return '';
+    if (strings.length === 1) return strings[0];
+
+    let prefix = strings[0];
+    for (let i = 1; i < strings.length; i++) {
+        while (!strings[i].startsWith(prefix)) {
+            prefix = prefix.substring(0, prefix.length - 1);
+            if (prefix === '') return '';
+        }
+    }
+    return prefix;
 }
 
 function getCommandSuggestions(partial) {
-    const availableCommands = Object.keys(commands);
-    return availableCommands.filter(cmd => cmd.startsWith(partial));
+    return Object.keys(commands).filter(cmd => cmd.startsWith(partial));
 }
 
 function getSuggestions(partial, type) {
-    // Split the partial into directory path and the name to autocomplete
     const lastSlashIndex = partial.lastIndexOf('/');
     let dirPath = '';
     let namePart = partial;
 
     if (lastSlashIndex !== -1) {
-        dirPath = partial.substring(0, lastSlashIndex + 1); // Include '/'
+        dirPath = partial.substring(0, lastSlashIndex + 1);
         namePart = partial.substring(lastSlashIndex + 1);
     }
 
-    // Resolve the directory path
-    const dir = resolvePathWithoutChanging(dirPath);
+    let dir = dirPath ? resolvePathWithoutChanging(dirPath) : getCurrentDirectory();
 
     if (!dir || dir.type !== 'directory') {
         return [];
     }
 
-    // Filter the children based on the type and namePart
-    let entries = dir.children;
+    return dir.children
+        .filter(entry => {
+            if (!entry.name.startsWith(namePart)) return false;
 
-    if (type === 'directory') {
-        entries = entries.filter(child => child.type === 'directory' && child.name.startsWith(namePart));
-    } else if (type === 'file_directory') {
-        entries = entries.filter(child => (child.type === 'file' || child.type === 'directory') && child.name.startsWith(namePart));
-    }
-
-    return entries.map(entry => escapeSpaces(dirPath + entry.name) + (entry.type === 'directory' ? '/' : ''));
+            switch (type) {
+                case 'directory':
+                    return entry.type === 'directory';
+                case 'file':
+                    return entry.type === 'file';
+                case 'file_directory':
+                    return true;
+                default:
+                    return false;
+            }
+        })
+        .map(entry => {
+            const fullName = dirPath + entry.name;
+            return entry.type === 'directory' ? fullName + '/' : fullName;
+        })
+        .sort();
 }
-
-
 
 function escapeSpaces(name) {
     return name.replace(/ /g, '\\ ');

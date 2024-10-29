@@ -5,6 +5,24 @@
 // Define blog posts
 const blogPosts = [
     {
+        name: 'native go cpuid package.md',
+        type: 'file',
+        date: '2024-10-29 02:32',
+        permissions: '-rw-r--r--.',
+        owner: 'earentir',
+        group: 'earentir',
+        content: [
+            '# Native GO cpuid Package',
+            '',
+            'I recently published a new Go package called `cpuid` that provides native CPUID feature identification for the x86 arch. This package is useful for detecting CPU features at runtime without relying on external tools or libraries.',
+            'Its still in the early stages, but I plan to add more features and improvements over time. In order to achieve this, I had to write some assembly code to access the CPUID instruction directly from Go. It supports Linux & Windows systems and I may add support for more OSs in the future.',
+            'After completing the x86 version, I plan to add support for RISC V and latter ARM systems as well.',
+            '',
+            'Visit the GH repo [cpuid](https://github.com/earentir/cpuid) for more details.',
+            ''
+        ]
+    },
+    {
         name: 'fun with js.md',
         type: 'file',
         date: '2024-10-27 02:24',
