@@ -91,7 +91,10 @@ window.onload = () => {
         if (event.key === 'Enter') {
             const userInput = input.value.trim();
             if (userInput) {
-                commandHistory.push(userInput);
+                //check if the current command is the same as the last command and dont add it to the history
+                if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== userInput && !userInput.startsWith('history')) {
+                    commandHistory.push(userInput);
+                }
                 if (commandHistory.length > MAX_HISTORY) {
                     commandHistory.shift();
                 }
@@ -263,8 +266,8 @@ function parseInput(input) {
 }
 
 function handleHistory(args) {
-//parse flags
-const flag = args[0];
+    //parse flags
+    const flag = args[0];
 
     // Clear history
     if (flag === '-c') {
