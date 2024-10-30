@@ -141,6 +141,19 @@ window.onload = () => {
             } else {
                 handleTabCompletion(input, 'single');
             }
+        } else if (event.altKey && event.key === '.') {
+            if (historyIndex > 0) {
+                historyIndex--;
+                let command = commandHistory[historyIndex];
+                let parts = command.trim().split(/\s+/);
+
+                if (parts.length > 1 && !parts[parts.length - 1].startsWith('-')) {
+                    input.value = input.value + parts[parts.length - 1];
+                }
+
+                updateBlockCursor();
+            }
+            event.preventDefault();
         } else {
             setTimeout(updateBlockCursor, 0);
         }
@@ -248,7 +261,6 @@ function parseInput(input) {
 }
 
 // Command Handlers
-
 function handleLs(args) {
     const flags = parseFlags(args);
     const directoryArgs = args.filter(arg => !arg.startsWith('-'));
@@ -431,8 +443,6 @@ function handleLs(args) {
         }
     }
 }
-
-
 
 function handleCat(args) {
     if (args.length === 0) {
