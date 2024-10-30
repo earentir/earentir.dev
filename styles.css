@@ -11,6 +11,11 @@ html {
   font-size: 22px;
 }
 
+p,
+ul {
+  margin: -20px;
+}
+
 #terminal {
   box-sizing: border-box;
   padding: 10px;
@@ -51,8 +56,8 @@ html {
 /* Style for the block cursor */
 #block-cursor {
     position: absolute;
-    width: 10px; /* Adjust width as needed */
-    height: 20px; /* Adjust height to match the input text height */
+    width: 10px;
+    height: 20px; /* match the input text height */
     background-color: white; /* Cursor color */
     animation: blink 1s step-start infinite;
     top: 0;
@@ -106,6 +111,12 @@ a.link:hover {
   text-decoration: underline;
 }
 
+
+.markdown-output p {
+  margin: 0;
+  padding: 0;
+}
+
 .markdown-output code {
   background-color: #333;
   padding: 2px 4px;
@@ -118,3 +129,9 @@ a.link:hover {
   border-radius: 4px;
   overflow-x: auto;
 }
+
+/* .markdown-output p + p,
+.markdown-output p + ul,
+.markdown-output ul + p {
+  margin-top: 5px;
+} */
