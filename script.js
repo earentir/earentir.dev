@@ -548,7 +548,10 @@ function handleHelp() {
 
 - help: Show this help message
 
--history: Show command history
+- history: Show command history
+    Options:
+    -c : Clear command history
+    -d <index> : Delete command at index
 
 - ls [options] [directories]: List files
     Options:
