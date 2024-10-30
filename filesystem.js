@@ -23,7 +23,7 @@ const fileSystem = {
                     owner: 'earentir',
                     group: 'earentir',
                     content: [
-                        'Earentir Terminal v1.0.9',
+                        'Earentir Terminal v1.0.13',
                     ]
                 }
             ]
@@ -233,7 +233,6 @@ const fileSystem = {
                                 permissions: '-rwxr-xr-x',
                                 owner: 'earentir',
                                 group: 'earentir',
-                                size: 2621,
                                 content: [
                                     '#!/bin/bash',
                                     '',

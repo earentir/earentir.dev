@@ -488,20 +488,31 @@ function handleCat(args) {
 
 function handleHelp() {
     return `Supported commands:
+- cat <file_path>: View file contents
+    - Supports file paths, e.g., cat "folder name/file.txt" or cat folder\\ name/file.txt
+
+- cd <directory>: Change directory
+    - cd .. : Go up one directory
+    - cd ~ : Go to home directory
+
+- clear: Clear the terminal
+
+- grep [options] <pattern> <file|directory>: Search for pattern in file or directory
+    Options:
+    -r : Search directories recursively
+    -i : Case-insensitive search
+
+- help: Show this help message
+
 - ls [options] [directories]: List files
-  Options:
+    Options:
     -l : Long listing format
     -a : All files (including hidden)
     -s : Show sizes
-    -la, -al, -ls, -sl, -as, -sa : Combination of flags
-- cat <file_path>: View file contents
-  - Supports file paths, e.g., cat "folder name/file.txt" or cat folder\\ name/file.txt
-- cd <directory>: Change directory
-  - cd .. : Go up one directory
-  - cd ~ : Go to home directory
-- su - <username>: Switch user
-- help: Show this help message
-- clear: Clear the terminal`;
+
+- pwd: Show current directory
+
+- su - <username>: Switch user`;
 }
 
 function handleClear() {
