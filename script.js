@@ -49,6 +49,28 @@ window.onload = () => {
     const output = document.getElementById('output');
     const prompt = document.getElementById('prompt');
 
+    // Check for URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const postName = params.get('blogpost');
+
+    if (postName) {
+        const decodedName = decodeURIComponent(postName);
+        // Remove .md extension if present
+        const nameWithoutExt = decodedName.replace(/\.md$/, '');
+        const cleanPostName = nameWithoutExt.replace(/[^a-zA-Z0-9- ]/g, '');
+
+        if (cleanPostName !== nameWithoutExt && cleanPostName !== 'list') {
+            appendOutput('Invalid blog post name.', output);
+        }
+
+        if (cleanPostName === 'list') {
+            processCommand('ls -la /home/earentir/blog', output);
+        } else {
+            const escapedName = cleanPostName.replace(/ /g, '\\ ');
+            processCommand(`cat /home/earentir/blog/${escapedName}.md`, output);
+        }
+    }
+
     // If currentPath is not set in localStorage, initialize it to home directory
     if (!localStorage.getItem('terminal-currentPath')) {
         currentPath = ['/', 'home', username];
@@ -98,10 +120,14 @@ window.onload = () => {
             event.preventDefault();
         } else if (event.key === 'Tab') {
             event.preventDefault();
+            event.stopPropagation();
 
             const currentTime = new Date().getTime();
+            const originalValue = input.value; // Store the original value
 
             if (currentTime - lastTabTime < TAB_PRESS_INTERVAL) {
+                // On second tab, restore the original value before processing
+                input.value = originalValue.replace(/^(.)\1/, '$1'); // Remove doubled first character if present
                 tabPressCount++;
             } else {
                 tabPressCount = 1;
@@ -110,11 +136,9 @@ window.onload = () => {
             lastTabTime = currentTime;
 
             if (tabPressCount === 2) {
-                // Double Tab pressed
                 handleTabCompletion(input, 'double');
-                tabPressCount = 0; // Reset the count
+                tabPressCount = 0;
             } else {
-                // Single Tab pressed
                 handleTabCompletion(input, 'single');
             }
         } else {
@@ -533,6 +557,8 @@ function handleSu(args) {
 // Utility Functions
 
 function appendOutput(text, output) {
+    console.log('appendOutput called with:', text);
+    console.trace();
     const line = document.createElement('div');
     line.innerHTML = text; // Supports clickable links and rendered Markdown
     output.appendChild(line);
@@ -612,11 +638,64 @@ function handleTabCompletion(inputElement, tabType) {
     // Split the input into tokens
     const tokens = beforeCursor.split(' ').filter(arg => arg);
 
+    // Handle double tab first, before we try to get suggestions
+    if (tabType === 'double') {
+        const output = document.getElementById('output');
+        let suggestions = [];
+
+        if (tokens.length === 0) {
+            // No command yet, show available commands
+            suggestions = Object.keys(commands);
+        } else {
+            const command = tokens[0];
+            let path = '';
+            if (tokens.length > 1) {
+                path = tokens[tokens.length - 1];
+            }
+
+            // Get the directory we should look in
+            let targetDir = getCurrentDirectory();
+            if (path) {
+                const resolvedPath = resolvePathWithoutChanging(path);
+                if (resolvedPath && resolvedPath.type === 'directory') {
+                    targetDir = resolvedPath;
+                }
+            }
+
+            // Based on the command, show appropriate suggestions
+            switch (command) {
+                case 'cd':
+                    suggestions = targetDir.children
+                        .filter(entry => entry.type === 'directory')
+                        .map(entry => entry.name + '/');
+                    break;
+                case 'cat':
+                    suggestions = targetDir.children
+                        .filter(entry => entry.type === 'file')
+                        .map(entry => entry.name);
+                    break;
+                case 'ls':
+                    suggestions = targetDir.children
+                        .map(entry => entry.type === 'directory' ? entry.name + '/' : entry.name);
+                    break;
+                default:
+                    suggestions = targetDir.children
+                        .map(entry => entry.type === 'directory' ? entry.name + '/' : entry.name);
+            }
+        }
+
+        const line = document.createElement('div');
+        line.textContent = suggestions.join('  ');
+        output.appendChild(line);
+        output.appendChild(document.createElement('div'));
+        return;
+    }
+
+    // Handle single tab - attempt completion
     let suggestions = [];
 
     if (tokens.length === 0) {
         if (tabType === 'double') {
-            // Show all available commands
             suggestions = Object.keys(commands);
         }
     } else {
@@ -625,10 +704,8 @@ function handleTabCompletion(inputElement, tabType) {
         const isFirstToken = tokens.length === 1;
 
         if (isFirstToken) {
-            // We're completing a command name
             suggestions = getCommandSuggestions(partial);
         } else {
-            // We're completing arguments for a command
             switch (command) {
                 case 'cd':
                     suggestions = getSuggestions(partial, 'directory');
@@ -643,22 +720,7 @@ function handleTabCompletion(inputElement, tabType) {
         }
     }
 
-    // Handle double tab - just show suggestions
-    if (tabType === 'double' && suggestions.length > 0) {
-        const output = document.getElementById('output');
-        const currentPrompt = `${username}@${hostname}:${getFormattedPath()}$ ${input}`;
-
-        // Show current input, suggestions, and a new prompt
-        appendOutput(currentPrompt, output);
-        appendOutput(suggestions.join('  '), output);
-        appendOutput('', output); // Empty line for spacing
-
-        // Do NOT modify the input field's contents
-        return;
-    }
-
-    // Handle single tab - attempt completion
-    if (tabType === 'single' && suggestions.length > 0) {
+    if (suggestions.length > 0) {
         if (suggestions.length === 1) {
             // Single match - complete it
             const partial = tokens[tokens.length - 1];
@@ -745,7 +807,8 @@ function getSuggestions(partial, type) {
             }
         })
         .map(entry => {
-            const fullName = dirPath + entry.name;
+            const escapedName = entry.name.replace(/ /g, '\\ ');
+            const fullName = dirPath + escapedName;
             return entry.type === 'directory' ? fullName + '/' : fullName;
         })
         .sort();

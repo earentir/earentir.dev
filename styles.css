@@ -32,10 +32,12 @@ html {
 
 .input-container {
   position: relative; /* Ensures block cursor is positioned correctly */
+  width: 100%;
 }
 
 #input {
   flex-grow: 1;
+  width: 100%;
   background: transparent;
   border: none;
   color: white;
