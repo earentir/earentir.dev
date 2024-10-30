@@ -39,8 +39,14 @@ const commands = {
     cd: handleCd,
     su: handleSu,
     grep: handleGrep,
-    pwd: handlePwd
+    pwd: handlePwd,
+    history: handleHistory
 };
+
+// Command history
+let commandHistory = JSON.parse(localStorage.getItem('commandhistory')) || [];
+let historyIndex = -1;
+const MAX_HISTORY = 100;
 
 // Initialize the terminal
 window.onload = () => {
@@ -81,11 +87,6 @@ window.onload = () => {
 
     input.focus();
 
-    // Command history
-    let commandHistory = [];
-    let historyIndex = -1;
-    const MAX_HISTORY = 100;
-
     input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             const userInput = input.value.trim();
@@ -94,6 +95,7 @@ window.onload = () => {
                 if (commandHistory.length > MAX_HISTORY) {
                     commandHistory.shift();
                 }
+                localStorage.setItem('commandhistory', JSON.stringify(commandHistory));
                 historyIndex = commandHistory.length;
             }
             processCommand(userInput, output);
@@ -258,6 +260,35 @@ function parseInput(input) {
     }
 
     return args;
+}
+
+function handleHistory(args) {
+//parse flags
+const flag = args[0];
+
+    // Clear history
+    if (flag === '-c') {
+        commandHistory = [];
+        localStorage.setItem('commandhistory', JSON.stringify(commandHistory));
+        return;
+    }
+
+    if (flag === '-d') {
+        if (args.length < 2) {
+            return 'Usage: history -d <index>';
+        }
+
+        const index = parseInt(args[1]);
+        if (isNaN(index) || index < 1 || index > commandHistory.length) {
+            return 'history: index out of range';
+        }
+
+        commandHistory.splice(index - 1, 1);
+        historyIndex = -1;
+        return;
+    }
+
+    return commandHistory.join('\n');
 }
 
 // Command Handlers
@@ -513,6 +544,8 @@ function handleHelp() {
     -i : Case-insensitive search
 
 - help: Show this help message
+
+-history: Show command history
 
 - ls [options] [directories]: List files
     Options:
