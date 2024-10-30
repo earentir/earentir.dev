@@ -617,8 +617,8 @@ function handleSu(args) {
 // Utility Functions
 
 function appendOutput(text, output) {
-    console.log('appendOutput called with:', text);
-    console.trace();
+    // console.log('appendOutput called with:', text);
+    // console.trace();
     const line = document.createElement('div');
     line.innerHTML = text; // Supports clickable links and rendered Markdown
     output.appendChild(line);
