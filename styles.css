@@ -7,7 +7,8 @@ html {
   padding: 0;
   background-color: black;
   color: white;
-  font-family: monospace;
+  font-family: 'PhoenixVGA', monospace;
+  font-size: 22px;
 }
 
 #terminal {
@@ -42,7 +43,8 @@ html {
   border: none;
   color: white;
   outline: none;
-  font-family: monospace;
+  font-family: 'PhoenixVGA', monospace;
+  font-size: 22px;
   caret-color: transparent; /* Hide the native cursor */
 }
 
@@ -80,7 +82,7 @@ a.link:hover {
 
 .markdown-output {
   white-space: pre-wrap;
-  font-family: monospace;
+  font-family: 'PhoenixVGA', monospace;
   color: white;
 }
 
