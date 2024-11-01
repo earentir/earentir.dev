@@ -2,6 +2,11 @@
 
 // Ensure filesystem.js is loaded before this script
 
+// Initialize username and hostname
+const hostname = 'hera';
+let username = localStorage.getItem('terminal-username') || 'earentir';
+const homeDirPath = `/home/${username}/`;
+
 // Initialize the current directory path from localStorage or home directory
 let currentPath = JSON.parse(localStorage.getItem('terminal-currentPath')) || ['/', 'home', username];
 
@@ -24,11 +29,6 @@ function getCurrentDirectory() {
     }
     return dir;
 }
-
-// Initialize username and hostname
-const hostname = 'hera';
-let username = localStorage.getItem('terminal-username') || 'earentir';
-const homeDirPath = `/home/${username}/`;
 
 // Define available commands
 const commands = {
