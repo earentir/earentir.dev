@@ -685,7 +685,7 @@ function getFormattedPath() {
 
 function updatePrompt() {
     const prompt = document.getElementById('prompt');
-    prompt.textContent = `${username}@${hostname}:${getFormattedPath()}$ `;
+    prompt.textContent = `${username}@${hostname}:${getFormattedPath()}$\u00A0`;
 }
 
 // Tab Completion Functionality
@@ -761,7 +761,8 @@ function handleTabCompletion(inputElement, tabType) {
     } else {
         const command = tokens[0];
         const partial = tokens[tokens.length - 1];
-        const isFirstToken = tokens.length === 1;
+        const isFirstToken = tokens.length === 1 && !beforeCursor.includes(' ');
+        // const isFirstToken = tokens.length === 1;
 
         if (isFirstToken) {
             suggestions = getCommandSuggestions(partial);
