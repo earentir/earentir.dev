@@ -354,6 +354,22 @@ const fileSystem = {
                         ]
                     },
                     {
+                        name: 'blog.md',
+                        type: 'file',
+                        date: '2024-11-04 01:11',
+                        permissions: '-rw-r--r--.',
+                        owner: 'earentir',
+                        group: 'earentir',
+                        content: [
+                            '# Reading the Blog',
+                            'You can List all the blog posts by using https://earentir.dev/?blogpost=list',
+                            'List a specific blog post by using https://earentir.dev/?blogpost=<postname>',
+                            '',
+                            'Use commands to access the blog FS /home/earentir/blog.sh',
+                            'Have Fun.'
+                        ]
+                    },
+                    {
                         name: 'blog.sh',
                         type: 'file',
                         date: '2024-11-04 00:49:14',
