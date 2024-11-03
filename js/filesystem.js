@@ -354,6 +354,23 @@ const fileSystem = {
                         ]
                     },
                     {
+                        name: 'test.sh',
+                        type: 'file',
+                        date: '2024-10-27 00:18:02',
+                        permissions: '-rwxr-xr-x',
+                        owner: 'earentir',
+                        group: 'earentir',
+                        content: [
+                            '#!/bin/earsh',
+                            'pwd',
+                            'ls',
+                            'cd /home/earentir',
+                            'pwd',
+                            '# This is a comment',
+                            'ls -ls'
+                        ]
+                    },
+                    {
                         name: 'README.md',
                         type: 'file',
                         date: '2024-10-26 23:23',
