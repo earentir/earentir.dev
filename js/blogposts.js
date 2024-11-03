@@ -5,6 +5,19 @@
 // Define blog posts
 const blogPosts = [
     {
+        name: 'shell script, echo command, fix for tab, no cmd space and cmd space.md',
+        type: 'file',
+        date: '2024-11-04 00:43',
+        permissions: '-rw-r--r--.',
+        owner: 'earentir',
+        group: 'earentir',
+        content: [
+            '# shell script, echo command, fix for tab, no cmd space and cmd space',
+            'Added the echo command to the terminal, with it I added the some env commands. Biggest addition is the shell script function, that will work as it is more like a bat from the MS-DOS world than a bach script, it will only execute commands one per line.',
+            'Also finally fixed the annoying removal of the prompt space when we started typing anything, as well as the extra space when no command was entered.',
+        ]
+    },
+    {
         name: 'washington post sub cancelation.md',
         type: 'file',
         date: '2024-10-29 03:58',
