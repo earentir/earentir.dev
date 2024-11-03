@@ -354,9 +354,24 @@ const fileSystem = {
                         ]
                     },
                     {
+                        name: 'blog.sh',
+                        type: 'file',
+                        date: '2024-11-04 00:49:14',
+                        permissions: '-rwxr-xr-x',
+                        owner: 'earentir',
+                        group: 'earentir',
+                        content: [
+                            '#!/bin/earsh',
+                            '# Moving to the blog directory',
+                            'echo "List of my Blogs Posts"',
+                            'cd /home/earentir/blog',
+                            'ls -ls'
+                        ]
+                    },
+                    {
                         name: 'test.sh',
                         type: 'file',
-                        date: '2024-10-27 00:18:02',
+                        date: '2024-11-04 00:18:02',
                         permissions: '-rwxr-xr-x',
                         owner: 'earentir',
                         group: 'earentir',
