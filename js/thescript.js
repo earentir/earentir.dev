@@ -71,7 +71,7 @@ window.onload = () => {
         }
 
         if (cleanPostName === 'list') {
-            processCommand('ls -la /home/earentir/blog', output);
+            processCommand('/home/earentir/blog.sh', output);
         } else {
             const escapedName = cleanPostName.replace(/ /g, '\\ ');
             processCommand(`cat /home/earentir/blog/${escapedName}.md`, output);
@@ -257,13 +257,45 @@ function processCommand(input, output) {
 
     const [command, ...args] = parseInput(input);
 
-    // Handle script execution only if command starts with ./
-    if (command && command.startsWith('./')) {
+    // First check if it's a full path to an executable
+    if (command && command.startsWith('/')) {
+        const file = resolvePathWithoutChanging(command);
+        if (file && file.type === 'file' && isExecutable(file)) {
+            const result = executeShellScript(file);
+            if (result) {
+                appendOutput(result, output);
+            }
+            return;
+        } else if (!file) {
+            appendOutput(`${command}: No such file or directory`, output);
+            return;
+        } else if (!isExecutable(file)) {
+            appendOutput(`${command}: Permission denied`, output);
+            return;
+        }
+    }
+    // Then check for ./ execution in current directory
+    else if (command && command.startsWith('./')) {
         const scriptName = command.slice(2); // Remove './'
-        const currentDir = getCurrentDirectory();
-        const file = currentDir.children.find(child =>
+        // Split the path to handle subdirectories
+        const pathParts = scriptName.split('/');
+        const fileName = pathParts.pop();
+        let targetDir = getCurrentDirectory();
+
+        // If there are path parts, traverse to the target directory
+        if (pathParts.length > 0) {
+            const dirPath = pathParts.join('/');
+            const resolvedDir = resolvePathWithoutChanging(dirPath);
+            if (!resolvedDir || resolvedDir.type !== 'directory') {
+                appendOutput(`${command}: No such file or directory`, output);
+                return;
+            }
+            targetDir = resolvedDir;
+        }
+
+        const file = targetDir.children.find(child =>
             child.type === 'file' &&
-            child.name === scriptName);
+            child.name === fileName);
 
         if (file && isExecutable(file)) {
             const result = executeShellScript(file);
@@ -272,10 +304,10 @@ function processCommand(input, output) {
             }
             return;
         } else if (!file) {
-            appendOutput(`./: No such file or directory: ${scriptName}`, output);
+            appendOutput(`${command}: No such file or directory`, output);
             return;
         } else if (!isExecutable(file)) {
-            appendOutput(`./: Permission denied: ${scriptName}`, output);
+            appendOutput(`${command}: Permission denied`, output);
             return;
         }
     }
@@ -988,7 +1020,7 @@ function getSuggestions(partial, type) {
             .map(entry => './' + escapeSpaces(entry.name));
     }
 
-    // Original path handling
+    // Path handling
     const lastSlashIndex = partial.lastIndexOf('/');
     let dirPath = '';
     let namePart = partial;
@@ -996,13 +1028,52 @@ function getSuggestions(partial, type) {
     if (lastSlashIndex !== -1) {
         dirPath = partial.substring(0, lastSlashIndex + 1);
         namePart = partial.substring(lastSlashIndex + 1);
+
+        // Get the directory we should look in
+        let dir;
+        if (partial.startsWith('/')) {
+            // Absolute path: start from root
+            if (dirPath === '/') {
+                dir = fileSystem;
+            } else {
+                // Remove leading and trailing slashes for resolution
+                const pathWithoutTrailingSlash = dirPath.replace(/\/$/, '');
+                const cleanPath = pathWithoutTrailingSlash.replace(/^\//, '');
+                dir = cleanPath ? resolvePathWithoutChanging(pathWithoutTrailingSlash) : fileSystem;
+            }
+        } else {
+            // Relative path: start from current directory
+            dir = dirPath ? resolvePathWithoutChanging(dirPath) : getCurrentDirectory();
+        }
+
+        if (!dir || dir.type !== 'directory') {
+            return [];
+        }
+
+        return dir.children
+            .filter(entry => {
+                if (!entry.name.startsWith(namePart)) return false;
+
+                switch (type) {
+                    case 'directory':
+                        return entry.type === 'directory';
+                    case 'file':
+                        return entry.type === 'file';
+                    case 'file_directory':
+                        return true;
+                    default:
+                        return false;
+                }
+            })
+            .map(entry => {
+                const escapedName = entry.name.replace(/ /g, '\\ ');
+                return dirPath + escapedName + (entry.type === 'directory' ? '/' : '');
+            })
+            .sort();
     }
 
-    let dir = dirPath ? resolvePathWithoutChanging(dirPath) : getCurrentDirectory();
-
-    if (!dir || dir.type !== 'directory') {
-        return [];
-    }
+    // No path separators - suggest from current directory
+    let dir = getCurrentDirectory();
 
     return dir.children
         .filter(entry => {
@@ -1021,8 +1092,7 @@ function getSuggestions(partial, type) {
         })
         .map(entry => {
             const escapedName = entry.name.replace(/ /g, '\\ ');
-            const fullName = dirPath + escapedName;
-            return entry.type === 'directory' ? fullName + '/' : fullName;
+            return escapedName + (entry.type === 'directory' ? '/' : '');
         })
         .sort();
 }
