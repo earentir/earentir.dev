@@ -40,7 +40,8 @@ const commands = {
     su: handleSu,
     grep: handleGrep,
     pwd: handlePwd,
-    history: handleHistory
+    history: handleHistory,
+    echo: handleEcho,
 };
 
 // Command history
@@ -174,6 +175,55 @@ window.onload = () => {
     });
 };
 
+function isExecutable(file) {
+    return file.permissions && file.permissions[3] === 'x';
+}
+
+function isValidShellScript(file) {
+    return file.content &&
+        file.content.length > 0 &&
+        file.content[0].trim() === '#!/bin/earsh';
+}
+
+function executeShellScript(file) {
+    if (!isExecutable(file)) {
+        return `${file.name}: Permission denied`;
+    }
+
+    if (!isValidShellScript(file)) {
+        return `${file.name}: Not a valid shell script`;
+    }
+
+    const output = [];
+    // Start from index 1 to skip the shebang line
+    for (let i = 1; i < file.content.length; i++) {
+        const line = file.content[i].trim();
+
+        // Skip empty lines and comments
+        if (!line || line.startsWith('#')) {
+            continue;
+        }
+
+        // Process the command and capture its output
+        const [command, ...args] = parseInput(line);
+
+        if (commands[command]) {
+            const result = commands[command](args);
+            if (result !== undefined) {
+                if (Array.isArray(result)) {
+                    output.push(...result);
+                } else {
+                    output.push(result);
+                }
+            }
+        } else {
+            output.push(`Command not found: ${command}`);
+        }
+    }
+
+    return output.join('\n');
+}
+
 function updateBlockCursor() {
     const input = document.getElementById('input');
     const blockCursor = document.getElementById('block-cursor');
@@ -188,7 +238,7 @@ function updateBlockCursor() {
     tempSpan.style.visibility = 'hidden';
     tempSpan.style.whiteSpace = 'pre';
     tempSpan.style.font = font;
-    tempSpan.textContent = text || ' '; // Prevent empty span
+    tempSpan.textContent = text || ''; // Prevent empty span
     document.body.appendChild(tempSpan);
     const textWidth = tempSpan.offsetWidth;
     document.body.removeChild(tempSpan);
@@ -207,6 +257,30 @@ function processCommand(input, output) {
 
     const [command, ...args] = parseInput(input);
 
+    // Handle script execution only if command starts with ./
+    if (command && command.startsWith('./')) {
+        const scriptName = command.slice(2); // Remove './'
+        const currentDir = getCurrentDirectory();
+        const file = currentDir.children.find(child =>
+            child.type === 'file' &&
+            child.name === scriptName);
+
+        if (file && isExecutable(file)) {
+            const result = executeShellScript(file);
+            if (result) {
+                appendOutput(result, output);
+            }
+            return;
+        } else if (!file) {
+            appendOutput(`./: No such file or directory: ${scriptName}`, output);
+            return;
+        } else if (!isExecutable(file)) {
+            appendOutput(`./: Permission denied: ${scriptName}`, output);
+            return;
+        }
+    }
+
+    // Regular command processing
     if (commands[command]) {
         const result = commands[command](args);
         if (result !== undefined) {
@@ -530,6 +604,54 @@ function handleCat(args) {
     }
 }
 
+function handleEcho(args) {
+    if (args.length === 0) {
+        return '';
+    }
+
+    if (args[0] === '$USER') {
+        return username;
+    }
+
+    switch (args[0]) {
+    case '$USER':
+        return username;
+    case '.':
+        return '\n';
+    case '$HOME':
+        return homeDirPath;
+    case '$HOSTNAME':
+        return hostname;
+    case '$PATH':
+        return currentPath.join('/');
+    case '$PWD':
+        return handlePwd();
+    case '$SHELL':
+        return '/bin/earsh';
+    case '$TERM':
+        return 'earterm-mono';
+    case '$LANG':
+        return 'en_US.UTF-8';
+    case '$EDITOR':
+        return 'vi';
+    case '$VISUAL':
+        return 'vi';
+    case '$PAGER':
+        return 'less';
+    case '$HISTSIZE':
+        return MAX_HISTORY;
+    case '$HISTCONTROL':
+        return 'ignoredups';
+    case '$env':
+        return Object.keys(process.env).map(key => `${key}=${process.env[key]}`).join('\n');
+
+    default:
+        return args.join(' ');
+    }
+
+    return args.join(' ');
+}
+
 function handleHelp() {
     return `Supported commands:
 - cat <file_path>: View file contents
@@ -688,7 +810,6 @@ function updatePrompt() {
     prompt.textContent = `${username}@${hostname}:${getFormattedPath()}$\u00A0`;
 }
 
-// Tab Completion Functionality
 function handleTabCompletion(inputElement, tabType) {
     const input = inputElement.value;
     const cursorPos = inputElement.selectionStart;
@@ -723,24 +844,32 @@ function handleTabCompletion(inputElement, tabType) {
             }
 
             // Based on the command, show appropriate suggestions
-            switch (command) {
-                case 'cd':
-                    suggestions = targetDir.children
-                        .filter(entry => entry.type === 'directory')
-                        .map(entry => entry.name + '/');
-                    break;
-                case 'cat':
-                    suggestions = targetDir.children
-                        .filter(entry => entry.type === 'file')
-                        .map(entry => entry.name);
-                    break;
-                case 'ls':
-                    suggestions = targetDir.children
-                        .map(entry => entry.type === 'directory' ? entry.name + '/' : entry.name);
-                    break;
-                default:
-                    suggestions = targetDir.children
-                        .map(entry => entry.type === 'directory' ? entry.name + '/' : entry.name);
+            if (tokens[tokens.length - 1].startsWith('./')) {
+                suggestions = targetDir.children
+                    .filter(entry =>
+                        entry.type === 'file' &&
+                        isExecutable(entry))
+                    .map(entry => './' + entry.name);
+            } else {
+                switch (command) {
+                    case 'cd':
+                        suggestions = targetDir.children
+                            .filter(entry => entry.type === 'directory')
+                            .map(entry => entry.name + '/');
+                        break;
+                    case 'cat':
+                        suggestions = targetDir.children
+                            .filter(entry => entry.type === 'file')
+                            .map(entry => entry.name);
+                        break;
+                    case 'ls':
+                        suggestions = targetDir.children
+                            .map(entry => entry.type === 'directory' ? entry.name + '/' : entry.name);
+                        break;
+                    default:
+                        suggestions = targetDir.children
+                            .map(entry => entry.type === 'directory' ? entry.name + '/' : entry.name);
+                }
             }
         }
 
@@ -764,7 +893,16 @@ function handleTabCompletion(inputElement, tabType) {
         const isFirstToken = tokens.length === 1 && !beforeCursor.includes(' ');
         // const isFirstToken = tokens.length === 1;
 
-        if (isFirstToken) {
+        if (partial.startsWith('./')) {
+            const currentDir = getCurrentDirectory();
+            const execPartial = partial.slice(2); // Remove './'
+            suggestions = currentDir.children
+                .filter(entry =>
+                    entry.type === 'file' &&
+                    isExecutable(entry) &&
+                    entry.name.startsWith(execPartial))
+                .map(entry => './' + entry.name);
+        } else if (isFirstToken) {
             suggestions = getCommandSuggestions(partial);
         } else {
             switch (command) {
@@ -837,6 +975,20 @@ function getCommandSuggestions(partial) {
 }
 
 function getSuggestions(partial, type) {
+    // Special handling for ./ executables
+    if (partial.startsWith('./')) {
+        const namePart = partial.slice(2); // Remove './'
+        const currentDir = getCurrentDirectory();
+
+        return currentDir.children
+            .filter(entry =>
+                entry.type === 'file' &&
+                entry.name.startsWith(namePart) &&
+                isExecutable(entry))
+            .map(entry => './' + escapeSpaces(entry.name));
+    }
+
+    // Original path handling
     const lastSlashIndex = partial.lastIndexOf('/');
     let dirPath = '';
     let namePart = partial;
