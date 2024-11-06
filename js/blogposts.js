@@ -5,10 +5,23 @@
 // Define blog posts
 const blogPosts = [
     {
+        name: 'So... I used an LLM to make my overlay vfs better and it silently destroyed everything in the code base.md',
+        type: 'file',
+        date: '2024-11-06 20:51',
+        permissions: '-rw-r--r--.',
+        owner: 'earentir',
+        group: 'earentir',
+        content: [
+            '#So... I used an LLM to make my overlay vfs better and it silently destroyed everything in the code base',
+            'A few nights ago, while working on this site, I decided to give the whole codebase to claude (3.5 sonnet new) to do a simple thing, add another const of the same json scheme on the users side (local store) and merge them before any call, but only create new files on the user side json config. Looking at what it produced originally, I noticed that it was close but buggy and decide to use more queries in claude to debug it. That was a huge mistake, at one point it gave me back quite a bit of code, looked at one of the functions and noticed it split code to another function, didnt pay attention cause it was not a bad move to refactor it, it was getting long. I didnt notice though that after it did this move to a few more of the functions I was debugging, it slowly started removing the refactored functions and simplifying the code by just removing all of my code, till only a bit of the functionality was preserved, I bet that was perfect for the poor LLM token storage :P. So today I reverted all the changes in that dreaded commit, I will re instate the overlay vfs function at some point when I actually have the time to write it ;)'
+
+        ]
+    },
+    {
         name: 'Q-Flash Plus (gigabyte).md',
         type: 'file',
-        date: '2024-11-06 19:49',
-        permissions: '-rw-r--r--',
+        date: '2024-11-06 18:49',
+        permissions: '-rw-r--r--.',
         owner: 'earentir',
         group: 'earentir',
         content: [
