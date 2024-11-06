@@ -5,6 +5,18 @@
 // Define blog posts
 const blogPosts = [
     {
+        name: 'Q-Flash Plus (gigabyte).md',
+        type: 'file',
+        date: '2024-11-06 19:49',
+        permissions: '-rw-r--r--',
+        owner: 'earentir',
+        group: 'earentir',
+        content: [
+            '#Q-Flash Plus (gigabyte).md',
+            'Place the firmware you want into a FAT32 formated usb drive, name the bios gigabyte.bin, place it into the dedicated usb port marked with BIOS above, while the PC is off, use a long item like a SIM slot pin to click the Q-Flash Button, after the BIOS is installed you will be rebooted to the BIOS screen.'
+        ]
+    },
+    {
         name: 'shell script, echo command, fix for tab, no cmd space and cmd space.md',
         type: 'file',
         date: '2024-11-04 00:43',
