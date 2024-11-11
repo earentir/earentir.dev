@@ -5,6 +5,23 @@
 // Define blog posts
 const blogPosts = [
     {
+        name: 'Build albert launcher on Fedora 41.md',
+        type: 'file',
+        date: '2024-11-11 02:40',
+        permissions: '-rw-r--r--.',
+        owner: 'earentir',
+        group: 'earentir',
+        content: [
+            '# Build albert launcher on Fedora 41',
+            'git clone --recursive https://github.com/albertlauncher/albert.git',
+            'cmake -B build -S albert -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release',
+            'dnf install qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-linguist qt6-qttools-devel qt6-qttools libqalculate-devel libarchive-devel python3-devel qt6-qtscxml-devel',
+            'cmake --build build',
+            'cmake --install build',
+            'sudo cmake --install build'
+        ]
+    },
+    {
         name: 'So... I used an LLM to make my overlay vfs better and it silently destroyed everything in the code base.md',
         type: 'file',
         date: '2024-11-06 20:51',
